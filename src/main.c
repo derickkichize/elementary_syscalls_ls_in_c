@@ -7,29 +7,20 @@
 #include <sys/syscall.h>
 #include <time.h>
 
+/* syscall numbers for OpenBSD XXX: "/usr/include/sys/syscall.h" */
 #define BSD_SYS_GETDENTS  99
 #define BSD_SYS_CHDIR	  12 
 #define BSD_SYS_OPEN  	  0x5
 #define BSD_SYS_CLOSE	  0x6
 #define BSD_SYS_STAT	  0x26
 
+/* flags for syscall options */
 #define X_RDONLY	  0x0000
 #define X_CLOEXEC 	  0x10000
 #define X_DIRECTORY	  0x20000
 
+/* definition for maximum directory entry names */
 #define MAXNAMELEN	  255
-
-struct x_dirent {
-	ino_t 	 d_fileno;  	 	 /* file number entry */
-	off_t 	 d_off;     	 	 /* offset after this entry */
-	uint16_t d_reclen;  	 	 /* length of this record */
-	uint8_t  d_type;    	 	 /* file type */
-	uint8_t	 d_namelen; 	 	 /* length of string in d_name */
-	uint8_t	 __d_padding[4]; 	 /* supress padding after d_name */
-	char 	 d_name[MAXNAMELEN + 1]; /*name must be no longer than this */
-};
-
-typedef struct x_dirent dirent_t;
 
 /* permissions */
 #define S_IRUSR 0000400
@@ -44,6 +35,25 @@ typedef struct x_dirent dirent_t;
 #define S_IWOTH 0000002
 #define S_IXOTH 0000001
 
+/* option flags for priting directory entries */
+#define SIMPLE_ENTRIES 	  0b00000001
+#define DETAIL_ENTRIES 	  0b00000010
+#define INODE_ENTRIES  	  0b00000100
+#define HIDDEN_ENTRIES 	  0b00001000
+#define RECURSIVE_ENTRIES 0b00010000
+
+/* custom dirent struct */
+struct x_dirent {
+	ino_t 	 d_fileno;  	 	 /* file number entry */
+	off_t 	 d_off;     	 	 /* offset after this entry */
+	uint16_t d_reclen;  	 	 /* length of this record */
+	uint8_t  d_type;    	 	 /* file type */
+	uint8_t	 d_namelen; 	 	 /* length of string in d_name */
+	uint8_t	 __d_padding[4]; 	 /* supress padding after d_name */
+	char 	 d_name[MAXNAMELEN + 1]; /*name must be no longer than this */
+};
+
+/* custom file stat struct */
 struct x_stat {
 	mode_t    st_mode;
 	dev_t     st_dev;
@@ -68,23 +78,20 @@ struct x_stat {
 };
 
 typedef struct x_stat stat_t;
+typedef struct x_dirent dirent_t;
 
-#define SIMPLE_ENTRIES 	  0b00000001
-#define DETAIL_ENTRIES 	  0b00000010
-#define INODE_ENTRIES  	  0b00000100
-#define HIDDEN_ENTRIES 	  0b00001000
-#define RECURSIVE_ENTRIES 0b00010000
-
+/*buf sizes and constants */
 #define DIRBUFSIZE   512
 #define CURDIR 	     "."
 #define DT_DIR 	     0x4
-
 #define MAXENTRYLINE 4096
 
+/* function prototypes */
 void print_dir_entries 	    (int opt, const char* dirname);
 void print_entries          (int opt, dirent_t*   dir);
 void print_detailed_entries (int opt, char* 	  name);
 
+/* prints detailed file entries */
 void
 print_detailed_entries (int opt, char* name)
 {
@@ -134,6 +141,7 @@ print_detailed_entries (int opt, char* name)
 }
 
 
+/* prints simple directory entries */
 void
 print_entries (int opt, dirent_t* dir)
 {
@@ -149,6 +157,7 @@ print_entries (int opt, dirent_t* dir)
 
 
 
+/* prints directory entries info based on options */
 void
 print_dir_entries (int opt, const char* dirname)
 {
